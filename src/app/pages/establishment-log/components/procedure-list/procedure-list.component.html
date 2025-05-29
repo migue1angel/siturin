@@ -1,0 +1,48 @@
+<p-panel>
+    <p-button [fluid]="true" icon="pi pi-arrow-left" label="Regresar a Establecimientos"
+        (click)="navigate.emit('establishments')" />
+    <p-table #dt2  dataKey="registerNumber" [globalFilterFields]="['commercialName', 'number']"
+        [columns]="cols" [value]="procedures" [tableStyle]="{ 'min-width': '50rem' }">
+        <ng-template #caption>
+            <div class="flex flex-col md:flex-row items-start md:items-center justify-start md:justify-between">
+                <span class="text-xl font-bold">Trámites</span>
+            </div>
+        </ng-template>
+        <ng-template #header let-columns>
+            <tr>
+                @for (col of cols; track $index) {
+                <th>
+                    {{ col.header }}
+                </th>
+                }
+                <th>Opciones</th>
+            </tr>
+        </ng-template>
+        <ng-template #body let-rowData let-columns="columns" let-expanded="expanded">
+            <tr>
+                @for (col of columns; track $index) {
+                <td>
+                    {{ rowData[col.field] }}
+                </td>
+                }
+                <td class="flex justify-center items-center gap-2">
+                    <p-button icon="pi pi-download" rounded="true" />
+                    <p-button [icon]="expanded ? 'pi pi-eye-slash' : 'pi pi-eye'" severity="info" rounded="true"
+                        [pRowToggler]="rowData" />
+                </td>
+            </tr>
+        </ng-template>
+        <ng-template #expandedrow let-procedure>
+            <tr>
+                <td colspan="100%">
+                    <app-assignment-history></app-assignment-history>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="100%">
+                    <app-inspection-history></app-inspection-history>
+                </td>
+            </tr>
+        </ng-template>
+    </p-table>
+</p-panel>
