@@ -2,21 +2,19 @@
 
 <p-iconfield>
     <p-inputicon styleClass="pi pi-search" />
-    <input pInputText [formControl]="query" [maxlength]="13" placeholder="RUC" type="text"
-        oninput="this.value = this.value.replace(/[^0-9]/g, '')" (input)="search(query.value ?? '')" />
+    <input pInputText [formControl]="query" [maxlength]="13" placeholder="RUC" type="text" oninput="this.value = this.value.replace(/[^0-9]/g, '')" (input)="search(query.value ?? '')" />
 </p-iconfield>
 
 <p-divider />
 
-
 @switch (currentComponent) {
-@case ('establishments') {
-<app-establishment-list (navigate)="changeComponent($event)"></app-establishment-list>
+    @case ('establishments') {
+        <app-establishment-list (navigate)="changeComponent($event)" />
+    }
+    @case ('procedures') {
+        <app-procedure-list (navigate)="changeComponent($event)" />
+    }
+    @default {
+        <app-establishment-list (navigate)="changeComponent($event)" />
+    }
 }
-@case ('procedures') {
-<app-procedure-list (navigate)="changeComponent($event)"></app-procedure-list>
-}
-@default {
-<app-establishment-list (viewDetails)="changeComponent('procedures')"></app-establishment-list>
-
-} }

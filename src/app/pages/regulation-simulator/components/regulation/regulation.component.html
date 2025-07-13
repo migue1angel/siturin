@@ -1,4 +1,28 @@
 <h1>Normativa</h1>
 
+@if (regulations.hasValue()) {
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+        <div formArrayName="sections">
+            @for (section of sections.controls; track section; let i = $index) {
+                <div [formGroupName]="i">
+                    <h3>{{ regulations.value()?.at(i)?.name }}</h3>
 
-<p>Lorem ipsum dolor, sit amet consectetur adipisicing elit. Illo repellat praesentium sequi itaque ipsam laboriosam maxime sed, nesciunt at, ad modi temporibus nobis consectetur rem magnam aperiam amet adipisci nihil?</p>
+                    <div formArrayName="regulationItems">
+                        @for (item of regulationItems(i).controls; track item; let j = $index) {
+                            <div [formGroupName]="j">
+                                <label>
+                                    <input type="checkbox" formControlName="isCompliant" />
+                                    {{ regulations.value()?.at(i)?.regulationItems?.at(j)?.name }}
+                                </label>
+                            </div>
+                        }
+                    </div>
+
+                    <hr />
+                </div>
+            }
+        </div>
+
+        <button type="submit">Enviar</button>
+    </form>
+}
