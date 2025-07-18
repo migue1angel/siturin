@@ -1,4 +1,4 @@
-export interface Regulations {
+export interface RegulationSection {
     id: string;
     createdAt: Date;
     updatedAt: Date;
@@ -23,4 +23,8 @@ export interface RegulationItem {
     order: number;
     isVisible: boolean;
     isCompliant?: boolean; 
+}
+
+export interface RegulationItemFormData extends RegulationItem {
+    isCompliant: boolean;
 }

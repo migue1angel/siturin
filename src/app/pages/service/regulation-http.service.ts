@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { Regulations } from '../regulation-simulator/regulations.model';
+import { RegulationSection } from '../regulation-simulator/regulations.model';
 
 @Injectable({
     providedIn: 'root'
@@ -11,6 +11,6 @@ export class RegulationHttpService {
     constructor() {}
 
     getRegulationsByModelId(modelId: number) {
-        return this.httpClient.get<Regulations[]>(`${this.apiUrl}/model/${modelId}/sections`);
+        return this.httpClient.get<RegulationSection[]>(`${this.apiUrl}/model/${modelId}/sections`);
     }
 }
