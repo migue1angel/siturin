@@ -1,17 +1,18 @@
 import { ChangeDetectionStrategy, Component, output } from '@angular/core';
 
-import { TableModule, TableRowCollapseEvent, TableRowExpandEvent } from 'primeng/table';
+import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { PanelModule } from 'primeng/panel';
 import { ColumnModel, procedures } from '../../data';
-import { InspectionHistoryComponent } from "../inspection-history/inspection-history.component";
+import { InspectionHistoryComponent } from '../inspection-history/inspection-history.component';
 import { FluidModule } from 'primeng/fluid';
-import { AssignmentHistoryComponent } from "../assignment-history/assignment-history.component";
+import { AssignmentHistoryComponent } from '../assignment-history/assignment-history.component';
+import { CommonModule } from '@angular/common';
 
 @Component({
     selector: 'app-procedure-list',
-    imports: [FluidModule, PanelModule, TableModule, ButtonModule, InputTextModule, InspectionHistoryComponent, AssignmentHistoryComponent],
+    imports: [CommonModule, FluidModule, PanelModule, TableModule, ButtonModule, InputTextModule, InspectionHistoryComponent, AssignmentHistoryComponent],
     templateUrl: './procedure-list.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -27,9 +28,7 @@ export class ProcedureListComponent {
         { field: 'catastroStatus', header: 'Estado del Catastro' }
     ];
 
-    onRowExpand(event: TableRowExpandEvent) {
-    }
-
-    onRowCollapse(event: TableRowCollapseEvent) {
+    rowClass(expanded: boolean) {
+        return { '!bg-primary !text-primary-contrast dark:bg-gray-800': expanded };
     }
 }
