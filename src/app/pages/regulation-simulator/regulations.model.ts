@@ -6,11 +6,12 @@ export interface RegulationSection {
     validationType: null | string;
     minimumScore: null;
     minimumItems: null;
-    order: number;
+    sort: number;
     modelId: number;
     isAdventureRequirement: boolean;
     isProtectedArea: boolean;
-    regulationItems: RegulationItem[];
+    enabled: boolean;
+    items: RegulationItem[];
 }
 
 export interface RegulationItem {
@@ -18,13 +19,13 @@ export interface RegulationItem {
     createdAt: Date;
     updatedAt: Date;
     name: string;
-    isMandatory: boolean;
+    required: boolean;
     score: null;
-    order: number;
-    isVisible: boolean;
-    isCompliant?: boolean; 
+    sort: number;
+    enabled: boolean;
+    isCompliant?: boolean;
 }
 
-export interface RegulationItemFormData extends RegulationItem {
-    isCompliant: boolean;
-}
+// export interface RegulationItemFormData extends RegulationItem {
+//     isCompliant: boolean;
+// }

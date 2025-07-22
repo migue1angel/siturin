@@ -1,51 +1,50 @@
-import { ChangeDetectionStrategy, Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { Component, effect, inject, input, OnInit, signal } from '@angular/core';
 import { RegulationHttpService } from '../../../service/regulation-http.service';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { RegulationItemFormData, RegulationSection } from '../../regulations.model';
+import { RegulationItem, RegulationSection } from '../../regulations.model';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { ButtonModule } from 'primeng/button';
-import { map, tap } from 'rxjs/operators';
 
 @Component({
     selector: 'app-regulation',
     imports: [ReactiveFormsModule, ToggleSwitchModule, ButtonModule],
-    templateUrl: './regulation.component.html',
+    templateUrl: './regulation.component.html'
 })
-export class RegulationComponent implements OnInit, OnDestroy {
+export class RegulationComponent implements OnInit {
     private readonly regulationHttpService = inject(RegulationHttpService);
     private readonly fb = inject(FormBuilder);
 
+    public modelId = input.required<number>();
+    public isProtectedArea = input.required<boolean>();
     protected form!: FormGroup;
     protected sections: RegulationSection[] = [];
-    protected loadForm = signal(false);
+    protected showForm = signal(false);
     private errorMessages: string[] = [];
 
-    ngOnInit(): void {
-        this.loadRegulations();
+    ngOnInit() {
+        this.loadRegulations(this.modelId());
     }
 
-    ngOnDestroy(): void {
-        this.onIsProtectedAreaChanges().unsubscribe();
+    private readonly reloadRegulation = effect(() => {
+        this.showForm.set(false);
+        this.loadRegulations(this.modelId());
+    });
+
+    loadRegulations(modelId: number) {
+        this.regulationHttpService.getRegulationsByModelId(modelId).subscribe((resp) => {
+            this.sections = resp;
+
+            this.buildForm();
+            this.showForm.set(true);
+        });
     }
 
-    loadRegulations(): void {
-        this.regulationHttpService
-            .getRegulationsByModelId(2)
-            .subscribe((resp) => {
-                this.sections = resp;
-                console.log(resp);
-                
-                this.buildForm();
-                this.onIsProtectedAreaChanges();
-                this.loadForm.set(true);
-            });
-    }
-
-    buildForm(): void {
+    buildForm() {
         const regularSections = this.sections.filter((section) => !section.isProtectedArea);
 
         this.form = this.fb.group({
-            isProtectedArea: [false],
+            regulation: [[]],
+            category: [{ value: null, disabled: true }], //activo cuando sea alimentos y be
             sections: this.fb.array(regularSections.map((section) => this.createSectionGroup(section)))
         });
     }
@@ -56,15 +55,14 @@ export class RegulationComponent implements OnInit, OnDestroy {
             name: [section.name],
             validationType: [section.validationType],
             isProtectedArea: [section.isProtectedArea],
-            minimumScore:[section.minimumScore],
             minimumItems: [section.minimumItems],
-            regulationItems: this.fb.array(
-                section.regulationItems.map((item) =>
+            items: this.fb.array(
+                section.items.map((item) =>
                     this.fb.group({
                         id: [item.id],
                         name: [item.name],
                         isCompliant: [false],
-                        isMandatory: [item.isMandatory],
+                        isMandatory: [item.required],
                         score: [item.score]
                     })
                 )
@@ -72,62 +70,77 @@ export class RegulationComponent implements OnInit, OnDestroy {
         });
     }
 
-    onIsProtectedAreaChanges() {
-        return this.isProtectedAreaField.valueChanges.subscribe((isProtectedArea) => {
-            const protectedSections = this.sections.filter((section) => section.isProtectedArea);
+    onIsProtectedAreaChanges = effect(() => {
+        const protectedSections = this.sections.filter((section) => section.isProtectedArea);
 
-            if (isProtectedArea) {
-                this.addProtectedAreaSections(protectedSections);
-            } else {
-                this.removeProtectedAreaSections(protectedSections);
-            }
-        });
-    }
+        if (this.isProtectedArea()) {
+            this.addProtectedAreaSections(protectedSections);
+        } else {
+            this.removeProtectedAreaSections(protectedSections);
+        }
+    });
 
-    addProtectedAreaSections(protectedSections: RegulationSection[]): void {
+    addProtectedAreaSections(protectedSections: RegulationSection[]) {
         protectedSections.forEach((section) => {
             const exists = this.sectionsField.value.some((s: any) => s.id === section.id);
             if (!exists) this.sectionsField.push(this.createSectionGroup(section));
         });
     }
 
-    removeProtectedAreaSections(protectedSections: RegulationSection[]): void {
+    removeProtectedAreaSections(protectedSections: RegulationSection[]) {
         protectedSections.forEach((section) => {
             const index = this.sectionsField.controls.findIndex((control) => control.value.id === section.id);
             if (index !== -1) this.sectionsField.removeAt(index);
         });
     }
 
-    onSubmit(): void {
-        const isCompliant = this.validateAllSections();
-        console.log({ isCompliant, form: this.form.value });
-        return this.showErrors();
+    onSubmit() {
+        this.validateSections();
+        if (this.errorMessages.length > 0) return this.showErrors();
+        const result = this.formattedResult;
+        console.log(result);
     }
 
-    validateAllSections(): boolean {
+    get formattedResult() {
+        const regulation = this.form.value.sections.flatMap((section: RegulationSection) => {
+            return section.items.map((item) => ({
+                id: item.id,
+                score: item.score,
+                isCompliant: item.isCompliant
+            }));
+        });
+
+        const category = this.categoryField.value;
+
+        return { regulation, category };
+    }
+
+    validateSections() {
         this.errorMessages = [];
-        return this.sections.every((section, index) => {
-            if (section.isProtectedArea && !this.isProtectedAreaField.value) return true;
 
-            const sectionForm = this.form.value.sections[index];
+        this.sectionsField.controls.forEach((sectionControl, index) => {
+            const section = this.sections[index];
+            if (section.isProtectedArea && !this.isProtectedArea()) return;
 
-            const selectedItems = sectionForm.regulationItems.filter((item: RegulationItemFormData) => item.isCompliant);
+            // const selectedItems = (sectionControl.get('regulationItems') as FormArray).value.filter((item: RegulationItemFormData) => item.isCompliant);
+            const selectedItems = this.getRegulationItemsField(index).value.filter((item: RegulationItem) => item.isCompliant);
 
             switch (section.validationType) {
                 case 'REQUIRED_ITEMS':
-                    return this.validateRequiredItems(section, selectedItems);
+                    this.validateRequiredItems(section, selectedItems);
+                    break;
                 case 'MINIMUM_ITEMS':
-                    return this.validateMinimumItems(section, selectedItems);
-                case 'REQUIRED_SCORE':
-                    return this.validateRequiredScore(section, selectedItems);
-                default:
-                    return true;
+                    this.validateMinimumItems(section, selectedItems);
+                    break;
+                case 'SCORE_BASED':
+                    this.validateScoreBased(selectedItems);
+                    break;
             }
         });
     }
 
-    validateRequiredItems(section: RegulationSection, selectedItems: RegulationItemFormData[]): boolean {
-        const requiredItems = section.regulationItems.filter((item) => item.isMandatory);
+    validateRequiredItems(section: RegulationSection, selectedItems: RegulationItem[]): boolean {
+        const requiredItems = section.items.filter((item) => item.required);
         const selectedItemIds = new Set(selectedItems.map((item) => item.id));
         const allRequiredSelected = requiredItems.every((item) => selectedItemIds.has(item.id));
 
@@ -138,7 +151,7 @@ export class RegulationComponent implements OnInit, OnDestroy {
         return allRequiredSelected;
     }
 
-    validateMinimumItems(section: RegulationSection, selectedItems: RegulationItemFormData[]): boolean {
+    validateMinimumItems(section: RegulationSection, selectedItems: RegulationItem[]): boolean {
         const minimumRequired = section.minimumItems ?? 0;
         const meetsMinimum = selectedItems.length >= minimumRequired;
 
@@ -150,19 +163,32 @@ export class RegulationComponent implements OnInit, OnDestroy {
         return meetsMinimum && allRequiredSelected;
     }
 
-    validateRequiredScore(section: RegulationSection, selectedItems: RegulationItemFormData[]): boolean {
-        const totalScore = selectedItems.reduce((sum, item) => sum + (item.score ?? 0), 0);
-        const requiredScore = section.minimumScore ?? 0;
-        const meetsScore = totalScore >= requiredScore;
-
-        if (!meetsScore) {
-            this.errorMessages.push(`La sección ${section.name} no cumple con el puntaje requerido. ` + `Puntuación: ${totalScore}, requerida: ${requiredScore}`);
+    validateScoreBased(selectedItems: RegulationItem[]) {
+        if (selectedItems.length <= 0) {
+            this.errorMessages.push('Debe seleccionar al menos un item para determinar la categoría');
+            return;
         }
+        const totalScore = selectedItems.reduce((sum, item) => sum + (item.score ?? 0), 0);
 
-        return meetsScore;
+        switch (true) {
+            case totalScore < 15:
+                this.setCategory('Category 1');
+                break;
+            case totalScore < 20:
+                this.setCategory('Category 2');
+                break;
+            default:
+                this.setCategory('Category 3');
+                break;
+        }
     }
 
-    showErrors(): void {
+    setCategory(category: string) {
+        this.categoryField.enable();
+        this.categoryField.setValue(category);
+    }
+
+    showErrors() {
         if (this.errorMessages.length > 0) {
             alert(this.errorMessages.join('\n'));
         }
@@ -171,12 +197,15 @@ export class RegulationComponent implements OnInit, OnDestroy {
     get sectionsField(): FormArray {
         return this.form.get('sections') as FormArray;
     }
+    get regulationField(): FormArray {
+        return this.form.get('regulation') as FormArray;
+    }
 
-    get isProtectedAreaField(): AbstractControl {
-        return this.form.controls['isProtectedArea'];
+    get categoryField(): AbstractControl {
+        return this.form.controls['category'];
     }
 
     getRegulationItemsField(sectionIndex: number): FormArray {
-        return this.sectionsField.at(sectionIndex).get('regulationItems') as FormArray;
+        return this.sectionsField.at(sectionIndex).get('items') as FormArray;
     }
 }

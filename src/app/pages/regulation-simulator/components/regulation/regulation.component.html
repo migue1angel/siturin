@@ -1,25 +1,18 @@
 <h1>Normativa</h1>
-@if (loadForm()) {
+@if (showForm()) {
     <form [formGroup]="form" (ngSubmit)="onSubmit()">
-        <div class="flex justify-between">
-            <span class="text-xl font-semibold">¿Su establecimiento se encuentra en área protegida?</span>
-            <p-toggle-switch formControlName="isProtectedArea" />
-        </div>
-        <hr />
+        <hr>
         <div formArrayName="sections">
             @for (section of sectionsField.controls; track section.value.id; let i = $index) {
                 <div [formGroupName]="i" class="mb-6">
                     <p class="text-lg font-bold mb-4">
                         {{ section.value.name }}
-                        @if (section.value.minimumScore > 0) {
-                            <span class="text-primary text-sm font-medium ml-2">(Mínimo requerido {{ section.value.minimumScore }}pts)</span>
-                        }
                         @if (section.value.minimumItems) {
                             <span class="text-primary text-sm font-medium ml-2">(Items mínimos requeridos {{ section.value.minimumItems }})</span>
                         }
                     </p>
 
-                    <div formArrayName="regulationItems">
+                    <div formArrayName="items">
                         @for (item of getRegulationItemsField(i).controls; track item.value.id; let j = $index) {
                             <div [formGroupName]="j" class="flex items-center justify-between">
                                 <label>
@@ -45,72 +38,3 @@
     </form>
 }
 
-<!-- @if (loadForm()) {
-    <form [formGroup]="form" (ngSubmit)="onSubmit()">
-        <div formArrayName="sections">
-            @for (section of sectionsField.controls; track section.value.id; let i = $index) {
-                @if (!section.value.isProtectedArea) {
-                    <div [formGroupName]="i" class="mb-6">
-                        <h3 class="text-lg font-bold mb-4">{{ section.value.name }}</h3>
-
-                        <div formArrayName="regulationItems">
-                            @for (item of getRegulationItemsField(i).controls; track item.value.id; let j = $index) {
-                                <div [formGroupName]="j" class="flex items-center justify-between">
-                                    <label>
-                                        {{ item.value.name }}
-                                        @if (item.value.score) {
-                                            <span class="text-sm text-primary ml-2">({{ item.value.score }} pts)</span>
-                                        }
-                                        @if (item.value.isMandatory) {
-                                            <span class="text-red-500 ml-1">*</span>
-                                        }
-                                    </label>
-
-                                    <p-toggleswitch formControlName="isCompliant" />
-                                </div>
-                                <hr />
-                            }
-                        </div>
-                    </div>
-                }
-            }
-        </div>
-
-        <div class="flex justify-between">
-            <span class="text-xl font-semibold">¿Su establecimiento se encuentra en área protegida?</span>
-            <p-toggle-switch formControlName="isProtectedArea" />
-        </div>
-        <hr />
-
-        <div formArrayName="sections">
-            @for (section of sectionsField.controls; track section.value.id; let i = $index) {
-                @if (section.value.isProtectedArea) {
-                    <div [formGroupName]="i" class="mb-6">
-                        <h3 class="text-lg font-bold mb-4">{{ section.value.name }}</h3>
-
-                        <div formArrayName="regulationItems">
-                            @for (item of getRegulationItemsField(i).controls; track item.value.id; let j = $index) {
-                                <div [formGroupName]="j" class="flex items-center justify-between">
-                                    <label>
-                                        {{ item.value.name }}
-                                        @if (item.value.score) {
-                                            <span class="text-sm text-primary ml-2">({{ item.value.score }} pts)</span>
-                                        }
-                                        @if (item.value.isMandatory) {
-                                            <span class="text-red-500 ml-1">*</span>
-                                        }
-                                    </label>
-
-                                    <p-toggleswitch formControlName="isCompliant" />
-                                </div>
-                                <hr />
-                            }
-                        </div>
-                    </div>
-                }
-            }
-        </div>
-
-        <p-button type="submit" [disabled]="form.invalid">Enviar</p-button>
-    </form>
-} -->

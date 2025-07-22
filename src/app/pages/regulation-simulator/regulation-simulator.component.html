@@ -1,6 +1,9 @@
 <h1>Simulador para identificar actividad turística y clasificación</h1>
 
-<p-divider/>
-<app-regulation-simulator-form></app-regulation-simulator-form>
-<p-divider/>
-<app-regulation></app-regulation>
+<p-toggleSwitch [(ngModel)]="prueba"></p-toggleSwitch>
+<button (click)="changeNumber = changeNumber - 1">cambiar</button>
+
+<p-divider />
+<app-regulation-simulator-form />
+<p-divider />
+<app-regulation [isProtectedArea]="prueba" [modelId]="changeNumber" />
