@@ -10,7 +10,7 @@ import { ButtonModule } from 'primeng/button';
     imports: [ReactiveFormsModule, ToggleSwitchModule, ButtonModule],
     templateUrl: './regulation.component.html'
 })
-export class RegulationComponent implements OnInit {
+export class RegulationComponent {
     private readonly regulationHttpService = inject(RegulationHttpService);
     private readonly fb = inject(FormBuilder);
 
@@ -19,35 +19,27 @@ export class RegulationComponent implements OnInit {
     public formSubmitted = output<FormSubmission>();
 
     protected form!: FormGroup;
-    protected sections: RegulationSection[] = [];
-    protected showForm = signal(false);
+    protected sections = signal<RegulationSection[]>([]);
     private errorMessages: string[] = [];
-
-    ngOnInit() {
-        this.loadRegulations(this.modelId());
-    }
-
-    private readonly reloadRegulation = effect(() => {
-        this.showForm.set(false);
-        this.loadRegulations(this.modelId());
-    });
 
     loadRegulations(modelId: number) {
         this.regulationHttpService.getRegulationsByModelId(modelId).subscribe((resp) => {
-            this.sections = resp;
-            this.buildForm();
-            this.showForm.set(true);
+            this.sections.set(resp);
         });
     }
 
-    buildForm() {   
-        const regularSections = this.sections.filter((section) => !section.isProtectedArea);
+    private readonly reloadRegulation = effect(() => {
+        this.loadRegulations(this.modelId());
+    });
+
+    buildForm = effect(() => {
+        const regularSections = this.sections().filter((section) => !section.isProtectedArea);
         this.form = this.fb.group({
             regulation: [[]],
             category: [{ value: null, disabled: true }], //activo cuando sea alimentos y be
             sections: this.fb.array(regularSections.map((section) => this.createSectionGroup(section)))
         });
-    }
+    });
 
     createSectionGroup(section: RegulationSection): FormGroup {
         return this.fb.group({
@@ -71,7 +63,7 @@ export class RegulationComponent implements OnInit {
     }
 
     onIsProtectedAreaChanges = effect(() => {
-        const protectedSections = this.sections.filter((section) => section.isProtectedArea);
+        const protectedSections = this.sections().filter((section) => section.isProtectedArea);
 
         if (this.isProtectedArea()) {
             this.addProtectedAreaSections(protectedSections);
@@ -97,7 +89,6 @@ export class RegulationComponent implements OnInit {
     onSubmit() {
         this.validateSections();
         if (this.errorMessages.length > 0) return this.showErrors();
-
         return this.formSubmitted.emit(this.formattedResult);
     }
 
@@ -119,7 +110,7 @@ export class RegulationComponent implements OnInit {
         this.errorMessages = [];
 
         this.sectionsField.controls.forEach((sectionControl, index) => {
-            const section = this.sections[index];
+            const section = this.sections()[index];
             if (section.isProtectedArea && !this.isProtectedArea()) return;
 
             const selectedItems = this.getRegulationItemsField(index).value.filter((item: RegulationItem) => item.isCompliant);
@@ -196,9 +187,9 @@ export class RegulationComponent implements OnInit {
     get sectionsField(): FormArray {
         return this.form.get('sections') as FormArray;
     }
-    get regulationField(): FormArray {
-        return this.form.get('regulation') as FormArray;
-    }
+    // get regulationField(): FormArray {
+    //     return this.form.get('regulation') as FormArray;
+    // }
 
     get categoryField(): AbstractControl {
         return this.form.controls['category'];

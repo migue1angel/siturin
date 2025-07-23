@@ -1,5 +1,5 @@
 <h1>Normativa</h1>
-@if (showForm()) {
+@if (sections()) {
     <form [formGroup]="form" (ngSubmit)="onSubmit()">
         <hr />
         <div formArrayName="sections">
