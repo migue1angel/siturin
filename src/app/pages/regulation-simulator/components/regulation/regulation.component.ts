@@ -1,7 +1,7 @@
-import { Component, effect, inject, input, OnInit, signal } from '@angular/core';
+import { Component, effect, inject, input, OnInit, output, signal } from '@angular/core';
 import { RegulationHttpService } from '../../../service/regulation-http.service';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { RegulationItem, RegulationSection } from '../../regulations.model';
+import { FormSubmission, RegulationItem, RegulationSection } from '../../regulations.model';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { ButtonModule } from 'primeng/button';
 
@@ -16,6 +16,8 @@ export class RegulationComponent implements OnInit {
 
     public modelId = input.required<number>();
     public isProtectedArea = input.required<boolean>();
+    public formSubmitted = output<FormSubmission>();
+
     protected form!: FormGroup;
     protected sections: RegulationSection[] = [];
     protected showForm = signal(false);
@@ -33,15 +35,13 @@ export class RegulationComponent implements OnInit {
     loadRegulations(modelId: number) {
         this.regulationHttpService.getRegulationsByModelId(modelId).subscribe((resp) => {
             this.sections = resp;
-
             this.buildForm();
             this.showForm.set(true);
         });
     }
 
-    buildForm() {
+    buildForm() {   
         const regularSections = this.sections.filter((section) => !section.isProtectedArea);
-
         this.form = this.fb.group({
             regulation: [[]],
             category: [{ value: null, disabled: true }], //activo cuando sea alimentos y be
@@ -97,12 +97,12 @@ export class RegulationComponent implements OnInit {
     onSubmit() {
         this.validateSections();
         if (this.errorMessages.length > 0) return this.showErrors();
-        const result = this.formattedResult;
-        console.log(result);
+
+        return this.formSubmitted.emit(this.formattedResult);
     }
 
-    get formattedResult() {
-        const regulation = this.form.value.sections.flatMap((section: RegulationSection) => {
+    get formattedResult(): FormSubmission {
+        const items = this.form.value.sections.flatMap((section: RegulationSection) => {
             return section.items.map((item) => ({
                 id: item.id,
                 score: item.score,
@@ -112,7 +112,7 @@ export class RegulationComponent implements OnInit {
 
         const category = this.categoryField.value;
 
-        return { regulation, category };
+        return { items, category };
     }
 
     validateSections() {
@@ -122,7 +122,6 @@ export class RegulationComponent implements OnInit {
             const section = this.sections[index];
             if (section.isProtectedArea && !this.isProtectedArea()) return;
 
-            // const selectedItems = (sectionControl.get('regulationItems') as FormArray).value.filter((item: RegulationItemFormData) => item.isCompliant);
             const selectedItems = this.getRegulationItemsField(index).value.filter((item: RegulationItem) => item.isCompliant);
 
             switch (section.validationType) {

@@ -4,6 +4,7 @@ import { RegulationSimulatorFormComponent } from './components/regulation-simula
 import { RegulationComponent } from './components/regulation/regulation.component';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { FormsModule } from '@angular/forms';
+import { FormSubmission } from './regulations.model';
 
 @Component({
     selector: 'app-regulation-simulator',
@@ -15,4 +16,7 @@ export class RegulationSimulatorComponent {
     prueba = false;
 
     changeNumber = 2;
+    onRegulationSubmitted(event: FormSubmission) {
+        console.log(event);
+    }
 }

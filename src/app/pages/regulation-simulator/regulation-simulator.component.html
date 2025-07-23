@@ -6,4 +6,4 @@
 <p-divider />
 <app-regulation-simulator-form />
 <p-divider />
-<app-regulation [isProtectedArea]="prueba" [modelId]="changeNumber" />
+<app-regulation [isProtectedArea]="prueba" [modelId]="changeNumber" (formSubmitted)="onRegulationSubmitted($event)" />

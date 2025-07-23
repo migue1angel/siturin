@@ -26,6 +26,11 @@ export interface RegulationItem {
     isCompliant?: boolean;
 }
 
-// export interface RegulationItemFormData extends RegulationItem {
-//     isCompliant: boolean;
-// }
+export interface FormSubmission {
+    category: string;
+    items: {
+        id: string;
+        isCompliant: boolean;
+        score: number;
+    };
+}

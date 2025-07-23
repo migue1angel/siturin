@@ -1,7 +1,7 @@
 <h1>Normativa</h1>
 @if (showForm()) {
     <form [formGroup]="form" (ngSubmit)="onSubmit()">
-        <hr>
+        <hr />
         <div formArrayName="sections">
             @for (section of sectionsField.controls; track section.value.id; let i = $index) {
                 <div [formGroupName]="i" class="mb-6">
@@ -25,7 +25,11 @@
                                     }
                                 </label>
 
-                                <p-toggleswitch formControlName="isCompliant" />
+                                <p-toggleswitch formControlName="isCompliant">
+                                    <ng-template #handle let-checked="checked">
+                                        <span class="!text-xs font-bold">{{checked ? 'SI' : 'NO' }}</span>
+                                    </ng-template>
+                                </p-toggleswitch>
                             </div>
                             <hr />
                         }
@@ -34,7 +38,6 @@
             }
         </div>
 
-        <p-button type="submit" [disabled]="form.invalid">Enviar</p-button>
+        <p-button type="submit" >Enviar</p-button>
     </form>
 }
-
